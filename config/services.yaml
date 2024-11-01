@@ -1,0 +1,31 @@
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+      #  bind:
+      #      $projectDir: '%kernel.project_dir%'
+
+    # Libraries
+
+    Marble\EntityManager\:
+        resource: '../vendor/marble/entity-manager/src/EntityManager'
+
+    Symfony\Component\Uid\Command\GenerateUlidCommand: ~
+    Symfony\Component\Uid\Command\InspectUlidCommand: ~
+
+    # Utilities
+
+    # Domain layer
+
+    Marble\JiraKpi\Domain\Service\:
+        resource: '../src/Domain/Service'
+
+    # Application layer
+
+    Marble\JiraKpi\Application\Console\Command\:
+        resource: '../src/Application/Console/Command'
+
+    # Infrastructure layer
+
+    Marble\JiraKpi\Infrastructure\:
+        resource: '../src/Infrastructure'

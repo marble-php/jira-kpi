@@ -1,0 +1,32 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/var/www/html
+    environment:
+      - PHP_IDE_CONFIG=serverName=marble-jira-kpi
+      - XDEBUG_MODE=develop,debug
+      - XDEBUG_TRIGGER=1
+      - XDEBUG_CONFIG=idekey=PHPSTORM
+    depends_on:
+      - mysql
+
+  phpmyadmin:
+    image: 'phpmyadmin'
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=8Up9uZRSS10TCeQ
+      - UPLOAD_LIMIT=512M
+    depends_on:
+      - mysql
+
+  mysql:
+    image: 'mysql:5.7'
+    command: --sql_mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
+    environment:
+      - MYSQL_ROOT_PASSWORD=8Up9uZRSS10TCeQ
