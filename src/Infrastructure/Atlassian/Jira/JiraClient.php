@@ -16,8 +16,7 @@ use function Symfony\Component\String\u;
 
 class JiraClient
 {
-    private const string BASE_PATH = '/rest/api/3/';
-    private const int    PAGE_SIZE = 100;
+    private const int PAGE_SIZE = 100;
 
     private readonly HttpClientInterface $http;
 
@@ -26,7 +25,7 @@ class JiraClient
         private readonly EntityManager   $entityManager,
         private readonly LoggerInterface $logger,
     ) {
-        $this->http = $httpClientFactory->createClient(self::BASE_PATH);
+        $this->http = $httpClientFactory->createClient();
     }
 
     public function importIssues(CarbonImmutable $updatedAfter): void

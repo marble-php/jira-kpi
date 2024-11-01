@@ -7,10 +7,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class HttpClientFactory
 {
-    public function createClient(string $basePath): HttpClientInterface
+    public function createClient(): HttpClientInterface
     {
         return HttpClient::create([
-            'base_uri'   => 'https://autarco.atlassian.net' . $basePath,
+            'base_uri'   => $_ENV['ATLASSIAN_API_URL'],
             'headers'    => [
                 'Accept'       => 'application/json',
                 'Content-Type' => 'application/json',
