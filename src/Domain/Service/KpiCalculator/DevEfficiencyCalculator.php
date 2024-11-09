@@ -38,6 +38,7 @@ class DevEfficiencyCalculator extends AbstractKpiCalculator
             $query = new TransitionedToStatusBetweenQuery(IssueStatus::DONE, $month, $month->addMonth());
             /** @var list<Issue> $issues */
             $issues         = $this->entityManager->getRepository(Issue::class)->fetchMany($query);
+            $issues         = array_filter($issues, fn(Issue $issue): bool => $issue->getType() !== IssueType::EPIC);
             $transitionRepo = $this->entityManager->getRepository(IssueTransition::class);
             $done           = count($issues);
             $cycleTimes     = [];
@@ -106,6 +107,51 @@ class DevEfficiencyCalculator extends AbstractKpiCalculator
 
     /**
      * @param int $numWholeMonths
+     * @return list<MonthlyDevIterations>
+     */
+    public function calculateDevIterationsUsingFeedbackToProcess(int $numWholeMonths): array
+    {
+        return $this->perMonth($numWholeMonths, function (CarbonImmutable $month): MonthlyDevIterations {
+            $query = new TransitionedFromStatusBetweenQuery(IssueStatus::IN_PROGRESS, $month, $month->addMonth());
+            /** @var list<IssueTransition> $transitions */
+            $transitions = $this->entityManager->getRepository(IssueTransition::class)->fetchMany($query);
+            $tickets     = [];
+
+            foreach ($transitions as $transition) {
+                $tickets[$transition->getIssue()->getKey()] = 1;
+            }
+
+            $query = new TransitionedToStatusBetweenQuery(IssueStatus::FEEDBACK_TO_PROCESS, $month, $month->addMonth());
+            /** @var list<IssueTransition> $transitions */
+            $transitions = $this->entityManager->getRepository(IssueTransition::class)->fetchMany($query);
+
+            foreach ($transitions as $transition) {
+                $key = $transition->getIssue()->getKey();
+
+                if (!array_key_exists($key, $tickets)) {
+                    $tickets[$key] = 1;
+                }
+
+                $tickets[$key]++;
+            }
+
+            arsort($tickets);
+
+            $mostIterated = array_slice($tickets, 0, 3, true);
+
+            return new MonthlyDevIterations(
+                $month,
+                count($tickets),
+                array_sum($tickets),
+                count(array_filter($tickets, fn(int $num): bool => $num === 1)),
+                count(array_filter($tickets, fn(int $num): bool => $num === 2)),
+                $mostIterated,
+            );
+        });
+    }
+
+    /**
+     * @param int $numWholeMonths
      * @return list<MonthlyTimePendingRelease>
      */
     public function calculateTimePendingRelease(int $numWholeMonths): array
@@ -113,7 +159,7 @@ class DevEfficiencyCalculator extends AbstractKpiCalculator
         return $this->perMonth($numWholeMonths, function (CarbonImmutable $month): MonthlyTimePendingRelease {
             $end            = $month->addMonth();
             $timeslots      = $this->timeslotCalculator->getTimeslotsOverlappingWith($month, $end);
-            $tsPendingRel   = array_filter($timeslots, fn(Timeslot $timeslot): bool => $timeslot->status === IssueStatus::PENDING_RELEASE);
+            $tsPendingRel   = array_filter($timeslots, fn(Timeslot $timeslot): bool => $timeslot->issue->getType() !== IssueType::EPIC && $timeslot->status === IssueStatus::PENDING_RELEASE);
             $timePendingRel = array_sum(array_map(fn(Timeslot $timeslot): int => $timeslot->getDurationBetween($month, $end)->value, $tsPendingRel));
 
             usort($tsPendingRel, fn(Timeslot $a, Timeslot $b): int => $b->getDuration()->value <=> $a->getDuration()->value);

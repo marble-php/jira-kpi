@@ -26,6 +26,10 @@ class CalcDevelopmentIterationsCommand extends AbstractKpiCommand
 
         $this->renderTable($output, ...$devIterations);
 
+        $devIterations = $this->efficiencyCalculator->calculateDevIterationsUsingFeedbackToProcess($this->getNumWholeMonths());
+
+        $this->renderTable($output, ...$devIterations);
+
         return Command::SUCCESS;
     }
 

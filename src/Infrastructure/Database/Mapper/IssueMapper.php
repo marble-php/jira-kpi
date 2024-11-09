@@ -34,5 +34,6 @@ class IssueMapper extends BaseEntityMapper
         $sqlBuilder->where('i.type = ' . $this->toSqlParam($sqlBuilder, IssueType::BUG));
         $sqlBuilder->andWhere('i.created >= ' . $this->toSqlParam($sqlBuilder, $query->after));
         $sqlBuilder->andWhere('i.created < ' . $this->toSqlParam($sqlBuilder, $query->before));
+        $sqlBuilder->andWhere('i.status != ' . $this->toSqlParam($sqlBuilder, IssueStatus::CANCELLED));
     }
 }
