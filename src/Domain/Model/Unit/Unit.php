@@ -9,8 +9,17 @@ readonly abstract class Unit
     ) {
     }
 
-    public function __invoke(): float
+    public static function asc(array $values): array
     {
-        return $this->value;
+        uasort($values, fn(Unit $a, Unit $b) => $a->value <=> $b->value);
+
+        return $values;
+    }
+
+    public static function desc(array $values): array
+    {
+        uasort($values, fn(Unit $a, Unit $b) => $b->value <=> $a->value);
+
+        return $values;
     }
 }

@@ -3,6 +3,7 @@
 namespace Marble\JiraKpi\Application\Console\Command;
 
 use Carbon\CarbonImmutable;
+use Marble\JiraKpi\Domain\Model\Unit\Unit;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
@@ -25,8 +26,12 @@ abstract class AbstractKpiCommand extends Command
         return round($fraction * 100, 1) . '%';
     }
 
-    final protected function suffix(string|int|float $suffix, bool $perc = false): string
+    final protected function suffix(string|int|float|Unit $suffix, bool $perc = false): string
     {
+        if ($suffix instanceof Unit) {
+            $suffix = $suffix->value;
+        }
+
         if (is_float($suffix)) {
             if ($perc) {
                 $suffix *= 100;

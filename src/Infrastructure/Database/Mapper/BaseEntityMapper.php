@@ -154,7 +154,7 @@ abstract class BaseEntityMapper implements EntityReader, EntityWriter
             $value instanceof Identifier      => $value instanceof AbstractUid ? $value->toBase58() : (string) $value,
             $value instanceof UnitEnum        => $value->name,
             $value instanceof CarbonInterface => $value->copy()->setTimezone('UTC')->toDateTimeString(),
-            $value instanceof Unit            => $value(),
+            $value instanceof Unit            => $value->value,
             default                           => $value,
         };
     }

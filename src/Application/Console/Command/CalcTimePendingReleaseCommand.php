@@ -35,7 +35,7 @@ class CalcTimePendingReleaseCommand extends AbstractKpiCommand
         $table    = new Table($output);
         $pastAvg  = $this->calcHistoricalAverages(...array_slice($analyses, 0, -2));
         $toString = fn(Timeslot $timeslot): string => sprintf('%s%s',
-            $timeslot->issue->getKey(), $this->suffix($timeslot->getDuration()->toDay()->value));
+            $timeslot->issue->getKey(), $this->suffix($timeslot->getDuration()->toDay()));
 
         $table->setHeaders(['Month', 'Releases', 'Avg time pending release', 'Slowest ticket', '2nd slowest', '3rd slowest']);
 

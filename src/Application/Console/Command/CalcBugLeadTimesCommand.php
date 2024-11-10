@@ -25,29 +25,31 @@ class CalcBugLeadTimesCommand extends AbstractKpiCommand
     {
         $analyses = $this->bugsAnalyzer->calculateLeadTime($this->getNumWholeMonths());
 
-        $this->renderTable($output, ...$analyses);
+        $this->renderLeadTimesTable($output, ...$analyses);
+        $this->renderLatenciesTable($output, ...$analyses);
 
         return Command::SUCCESS;
     }
 
-    private function renderTable(OutputInterface $output, MonthlyBugLeadTime ...$analyses): void
+    private function renderLeadTimesTable(OutputInterface $output, MonthlyBugLeadTime ...$analyses): void
     {
         $table   = new Table($output);
-        $pastAvg = $this->calcHistoricalAverages(...array_slice($analyses, 0, -2));
+        $pastAvg = $this->calcHistoricalLeadTimeAverages(...array_slice($analyses, 0, -2));
 
         $table->setHeaders(['Month', 'Bugs fixed', 'Avg bug lead time', 'Max 6 months old', 'Max 2 months old', 'Slowest bug', '2nd slowest', '3rd slowest']);
 
         foreach ($analyses as $index => $analysis) {
-            $slowest = array_map(fn(string $key, Second $leadTime): string => sprintf('%s%s', $key, $this->suffix($leadTime->toDay()->value)),
-                array_keys($analysis->slowest), $analysis->slowest);
+            $slowest = $analysis->getSlowest(3);
+            $slowest = array_map(fn(string $key, Second $leadTime): string => sprintf('%s%s', $key, $this->suffix($leadTime->toDay())),
+                array_keys($slowest), $slowest);
 
             $table->addRow([
                 $this->ongoing($analysis->month),
                 $analysis->fixed,
-                round($analysis->avgLeadTime->toDay()->value, 1),
-                round($analysis->avgLeadTimeMax2Months->toDay()->value, 1),
-                round($analysis->avgLeadTimeMax2Months->toDay()->value, 1),
-                ...array_slice($slowest, 0, 3),
+                round($analysis->getAvgLeadTime()->toDay()->value, 1),
+                round($analysis->getAvgLeadTimeMaxAge(26)->toDay()->value, 1),
+                round($analysis->getAvgLeadTimeMaxAge(8)->toDay()->value, 1),
+                ...$slowest,
             ]);
 
             if ($index === count($analyses) - 3) {
@@ -58,7 +60,7 @@ class CalcBugLeadTimesCommand extends AbstractKpiCommand
         $table->render();
     }
 
-    private function calcHistoricalAverages(MonthlyBugLeadTime ...$analyses): array
+    private function calcHistoricalLeadTimeAverages(MonthlyBugLeadTime ...$analyses): array
     {
         $result = [
             'fixed'         => 0,
@@ -69,15 +71,76 @@ class CalcBugLeadTimesCommand extends AbstractKpiCommand
 
         foreach ($analyses as $analysis) {
             $result['fixed']         += $analysis->fixed;
-            $result['avg-lead-time'] += $analysis->fixed * $analysis->avgLeadTime->toDay()->value;
-            $result['max-6-months']  += $analysis->fixed * $analysis->avgLeadTimeMax6Months->toDay()->value;
-            $result['max-2-months']  += $analysis->fixed * $analysis->avgLeadTimeMax2Months->toDay()->value;
+            $result['avg-lead-time'] += $analysis->fixed * $analysis->getAvgLeadTime()->toDay()->value;
+            $result['max-6-months']  += $analysis->fixed * $analysis->getAvgLeadTimeMaxAge(26)->toDay()->value;
+            $result['max-2-months']  += $analysis->fixed * $analysis->getAvgLeadTimeMaxAge(8)->toDay()->value;
         }
 
         $result['avg-lead-time'] = round(div($result['avg-lead-time'], $result['fixed']), 1);
         $result['max-6-months']  = round(div($result['max-6-months'], $result['fixed']), 1);
         $result['max-2-months']  = round(div($result['max-2-months'], $result['fixed']), 1);
         $result['fixed']         = round(div($result['fixed'], count($analyses)), 1);
+
+        return $result;
+    }
+
+    private function renderLatenciesTable(OutputInterface $output, MonthlyBugLeadTime ...$analyses): void
+    {
+        $table   = new Table($output);
+        $pastAvg = $this->calcHistoricalLatencyAverages(...array_slice($analyses, 0, -2));
+
+        $table->setHeaders(['Month', 'Bugs fixed', 'Avg latency', 'Within 1 week', 'Within 2 weeks', 'Within 2 months', 'Within 6 months', 'Hottest bug', '2nd hottest', '3rd hottest']);
+
+        foreach ($analyses as $index => $analysis) {
+            $hottest = $analysis->getHottest(3);
+            $hottest = array_map(fn(string $key, Second $latency): string => sprintf('%s%s', $key, $this->suffix($latency->toDay())),
+                array_keys($hottest), $hottest);
+
+            $table->addRow([
+                $this->ongoing($analysis->month),
+                $analysis->fixed,
+                round($analysis->getAvgLatency()->toDay()->value, 1),
+                $this->perc($analysis->getFractionReportedWithin(1)),
+                $this->perc($analysis->getFractionReportedWithin(2)),
+                $this->perc($analysis->getFractionReportedWithin(8)),
+                $this->perc($analysis->getFractionReportedWithin(26)),
+                ...$hottest,
+            ]);
+
+            if ($index === count($analyses) - 3) {
+                $this->addHistoricalAveragesRow($table, $pastAvg, 3);
+            }
+        }
+
+        $table->render();
+    }
+
+    private function calcHistoricalLatencyAverages(MonthlyBugLeadTime ...$analyses): array
+    {
+        $result = [
+            'fixed'           => 0,
+            'avg-latency'     => 0,
+            'within-1-week'   => 0,
+            'within-2-weeks'  => 0,
+            'within-2-months' => 0,
+            'within-6-months' => 0,
+        ];
+
+        foreach ($analyses as $analysis) {
+            $result['fixed']           += $analysis->fixed;
+            $result['avg-latency']     += $analysis->fixed * $analysis->getAvgLatency()->toDay()->value;
+            $result['within-1-week']   += $analysis->fixed * $analysis->getFractionReportedWithin(1);
+            $result['within-2-weeks']  += $analysis->fixed * $analysis->getFractionReportedWithin(2);
+            $result['within-2-months'] += $analysis->fixed * $analysis->getFractionReportedWithin(8);
+            $result['within-6-months'] += $analysis->fixed * $analysis->getFractionReportedWithin(26);
+        }
+
+        $result['avg-latency']     = round(div($result['avg-latency'], $result['fixed']), 1);
+        $result['within-1-week']   = round(div($result['within-1-week'], $result['fixed']), 1);
+        $result['within-2-weeks']  = round(div($result['within-2-weeks'], $result['fixed']), 1);
+        $result['within-2-months'] = round(div($result['within-2-months'], $result['fixed']), 1);
+        $result['within-6-months'] = round(div($result['within-6-months'], $result['fixed']), 1);
+        $result['fixed']           = round(div($result['fixed'], count($analyses)), 1);
 
         return $result;
     }

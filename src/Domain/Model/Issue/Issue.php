@@ -10,6 +10,8 @@ use Marble\JiraKpi\Domain\Model\Unit\StoryPoint;
 
 class Issue implements Entity
 {
+    private ?string $causeKey = null;
+
     public function __construct(
         private readonly SimpleId $key,
         private IssueType         $type,
@@ -78,5 +80,15 @@ class Issue implements Entity
     public function setStatus(IssueStatus $status): void
     {
         $this->status = $status;
+    }
+
+    public function getCauseKey(): ?string
+    {
+        return $this->causeKey;
+    }
+
+    public function setCauseKey(?string $causeKey): void
+    {
+        $this->causeKey = $causeKey;
     }
 }

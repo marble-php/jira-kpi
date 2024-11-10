@@ -34,14 +34,13 @@ class CalcBugsReportedCommand extends AbstractKpiCommand
         $table   = new Table($output);
         $pastAvg = $this->calcHistoricalAverages(...array_slice($analyses, 0, -2));
 
-        $table->setHeaders(['Month', 'Bugs created', 'Bugs estimated', 'Story points', 'Avg estimate']);
+        $table->setHeaders(['Month', 'Bugs created', 'Bugs estimated', 'Avg estimate']);
 
         foreach ($analyses as $index => $analysis) {
             $table->addRow([
                 $this->ongoing($analysis->month),
                 $analysis->created,
                 $analysis->estimated . $this->suffix($analysis->getEstimatedFraction(), true),
-                $analysis->storyPoints->value,
                 round($analysis->getAvgStoryPointEstimate(), 1),
             ]);
 
@@ -58,19 +57,16 @@ class CalcBugsReportedCommand extends AbstractKpiCommand
         $result = [
             'created'      => 0,
             'estimated'    => 0,
-            'storyPoints'  => 0,
             'avg-estimate' => 0,
         ];
 
         foreach ($analyses as $analysis) {
             $result['created']      += $analysis->created;
             $result['estimated']    += $analysis->estimated;
-            $result['storyPoints']  += $analysis->storyPoints->value;
             $result['avg-estimate'] += $analysis->getAvgStoryPointEstimate();
         }
 
         $result['avg-estimate'] = round(div($result['avg-estimate'], count($analyses)), 1);
-        $result['storyPoints']  = round(div($result['storyPoints'], count($analyses)), 1);
         $result['estimated']    = round(div($result['estimated'], count($analyses)), 1) . $this->suffix(div($result['estimated'], $result['created']), true);
         $result['created']      = round(div($result['created'], count($analyses)), 1);
 

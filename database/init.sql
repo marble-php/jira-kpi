@@ -6,12 +6,13 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `issue`
 (
-    `key`      varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-    `type`     varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-    `created`  timestamp                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `summary`  varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-    `estimate` smallint(6)                                   DEFAULT NULL,
-    `status`   varchar(255) COLLATE utf8_unicode_ci NOT NULL
+    `key`       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+    `type`      varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+    `created`   timestamp                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `summary`   varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+    `estimate`  smallint(6)                                   DEFAULT NULL,
+    `status`    varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+    `cause_key` varchar(255) COLLATE utf8_unicode_ci          DEFAULT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8
   COLLATE = utf8_unicode_ci;

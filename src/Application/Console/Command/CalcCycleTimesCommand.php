@@ -38,7 +38,7 @@ class CalcCycleTimesCommand extends AbstractKpiCommand
         $table->setHeaders(['Month', 'Tickets done', 'Avg cycle time', 'Without slowest', 'Slowest ticket', '2nd slowest', '3rd slowest']);
 
         foreach ($cycleTimes as $index => $cycleTime) {
-            $slowest = array_map(fn(string $key, Second $leadTime): string => sprintf('%s%s', $key, $this->suffix($leadTime->toDay()->value)),
+            $slowest = array_map(fn(string $key, Second $leadTime): string => sprintf('%s%s', $key, $this->suffix($leadTime->toDay())),
                 array_keys($cycleTime->slowest), $cycleTime->slowest);
 
             $table->addRow([

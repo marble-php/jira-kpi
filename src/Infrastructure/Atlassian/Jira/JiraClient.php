@@ -53,6 +53,7 @@ class JiraClient
                 $issue = $this->persistIssue($data['key'], $data['fields']);
 
                 $this->importIssueChangelog($issue);
+                $this->saveCausingIssue($issue, $data['fields']['issuelinks'] ?? []);
             }
 
             $this->entityManager->flush();
@@ -125,8 +126,6 @@ class JiraClient
         $toStatus   = $this->mapJiraStatus($change['toString']);
 
         if ($fromStatus !== $toStatus) {
-            usleep(1000); // to prevent ULID collisions
-
             $transition = new IssueTransition(
                 externalId: new SimpleId($event['id']),
                 issue: $issue,
@@ -155,5 +154,18 @@ class JiraClient
             'done', 'released'           => IssueStatus::DONE,
             "won't fix", 'duplicate'     => IssueStatus::CANCELLED,
         };
+    }
+
+    private function saveCausingIssue(Issue $issue, array $links): void
+    {
+        foreach ($links as $link) {
+            if ($link['type']['id'] === '10010' && isset($link['inwardIssue'])) {
+                $key = $link['inwardIssue']['key'];
+
+                $issue->setCauseKey($key);
+
+                return; // issue can have only 1 cause
+            }
+        }
     }
 }

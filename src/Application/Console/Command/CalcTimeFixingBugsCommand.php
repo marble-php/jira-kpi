@@ -36,7 +36,7 @@ class CalcTimeFixingBugsCommand extends AbstractKpiCommand
         $table    = new Table($output);
         $pastAvg  = $this->calcHistoricalAverages(...array_slice($analyses, 0, -2));
         $toString = fn(Timeslot $timeslot): string => sprintf('%s %s%s',
-            $timeslot->issue->getKey(), u($timeslot->status->name)->lower()->replace('_', ' '), $this->suffix($timeslot->getDuration()->toDay()->value));
+            $timeslot->issue->getKey(), u($timeslot->status->name)->lower()->replace('_', ' '), $this->suffix($timeslot->getDuration()->toDay()));
 
         $table->setHeaders(['Month', 'Cumulative active time', 'Active time bugs', 'Slowest bug timeslot', '2nd slowest', '3rd slowest']);
 
@@ -44,7 +44,7 @@ class CalcTimeFixingBugsCommand extends AbstractKpiCommand
             $table->addRow([
                 $this->ongoing($analysis->month),
                 round($analysis->workingOnAny->toDay()->value, 1),
-                $this->perc($analysis->getFractionFixingBugs()) . $this->suffix($analysis->fixingBugs->toDay()->value),
+                $this->perc($analysis->getFractionFixingBugs()) . $this->suffix($analysis->fixingBugs->toDay()),
                 ...array_map($toString, array_slice($analysis->slowest, 0, 3)),
             ]);
 
